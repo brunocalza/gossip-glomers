@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"sort"
+	"strconv"
 	"sync"
 	"time"
 
@@ -81,16 +82,28 @@ func (s *State) Messages() []int {
 }
 
 const RPCTimeout = 300 * time.Millisecond
-const RetryInterval = 500 * time.Millisecond
+
+func getEnvInt(key string, defaultVal int) int {
+	if v := os.Getenv(key); v != "" {
+		if n, err := strconv.Atoi(v); err == nil {
+			return n
+		}
+	}
+	return defaultVal
+}
 
 func main() {
+	retryMs := getEnvInt("RETRY", 500)
+	branching := getEnvInt("BRANCH", 6)
+	retryInterval := time.Duration(retryMs) * time.Millisecond
+
 	n := maelstrom.NewNode()
 
 	state := NewState()
 
 	ctx := context.Background()
 
-	ticker := time.NewTicker(RetryInterval)
+	ticker := time.NewTicker(retryInterval)
 	go func() {
 		defer ticker.Stop()
 		for {
@@ -187,7 +200,7 @@ func main() {
 			return err
 		}
 
-		state.neighbors = buildTree(n.ID(), n.NodeIDs(), 6)
+		state.neighbors = buildTree(n.ID(), n.NodeIDs(), branching)
 
 		type response struct {
 			Type string `json:"type"`

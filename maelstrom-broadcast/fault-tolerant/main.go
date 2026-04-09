@@ -62,7 +62,6 @@ func main() {
 	// have 5 background jobs periodically retrying messages
 	for i := 0; i < 5; i++ {
 		go func() {
-
 			for job := range retries {
 				type req struct {
 					Type    string `json:"type"`
@@ -74,8 +73,10 @@ func main() {
 				_, err := n.SyncRPC(ctx, job.destination, r)
 				cancel()
 				if err != nil {
-					time.Sleep(RetryInterval)
-					retries <- job
+					job := job
+					time.AfterFunc(RetryInterval, func() {
+						retries <- job
+					})
 				}
 			}
 
