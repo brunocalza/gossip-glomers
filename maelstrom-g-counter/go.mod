@@ -1,4 +1,4 @@
-module github.com/brunocalza/maelstrom-echo
+module github.com/brunocalza/maelstrom-g-counter
 
 go 1.26.1
 
